@@ -1,11 +1,16 @@
 from bs4 import BeautifulSoup
 import requests
 from selenium import webdriver
+from selenium.webdriver.firefox.firefox_binary import FirefoxBinary
+import threading
 import time
 
 
 SCROLL_PAUSE_TIME = 0.5
-driver = webdriver.Firefox()
+
+binary = FirefoxBinary(r'C:\Program Files\Mozilla Firefox\firefox.exe')
+driver = webdriver.Firefox(firefox_binary=binary, executable_path='geckodriver.exe')
+# driver = webdriver.Firefox()
 url = "https://pixabay.com/zh/photos/?cat=nature&pagi="
 
 
@@ -16,8 +21,9 @@ def download_img(imgurl):
         filename = imgurl.split('/')[-1]
         img = open("pic/{}".format(filename),'wb')
         img.write(res.content)
-    except:
-        pass
+        print("DONE {}".format(imgurl), end = '\r')
+    except Exception as e:
+        print(e)
 
 def load_page(page):
     last_height = driver.execute_script("return window.scrollY")
@@ -39,15 +45,16 @@ def load_page(page):
     html = driver.page_source
     soup = BeautifulSoup(html, 'html5lib')
     imglistdiv = soup.findAll("div", {"class": "item"})
-    print(len(imglistdiv))
+    print("page:",page,"total:",len(imglistdiv))
 
     for img in imglistdiv:
         imgurl = img.find('img')['src']
         print(imgurl)
-        download_img(imgurl)
+        threading._start_new_thread(download_img, (imgurl,))
+        # download_img(imgurl)
 
 def main():
-    page = 21
+    page = 1
     while True:
         driver.get(url+ str(page))
         load_page(page)
